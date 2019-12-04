@@ -73,6 +73,13 @@ int rgw_process_authenticated(RGWHandler_REST * const handler,
     return ret;
   }
 
+  // verify api mask
+  req->log(s, "verifying api mask");
+  ret = op->verify_api_mask();
+  if (ret < 0) {
+    return ret;
+  }
+
   req->log(s, "verifying op mask");
   ret = op->verify_op_mask();
   if (ret < 0) {

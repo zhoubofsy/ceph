@@ -713,8 +713,9 @@ static void dump_swift_keys_info(Formatter *f, RGWUserInfo &info)
 static void dump_user_info(Formatter *f, RGWUserInfo &info,
                            RGWStorageStats *stats = NULL)
 {
+  encode_json("user_info", info, f);
+  /*
   f->open_object_section("user_info");
-
   f->dump_string("tenant", info.user_id.tenant);
   f->dump_string("user_id", info.user_id.id);
   f->dump_string("display_name", info.display_name);
@@ -731,6 +732,7 @@ static void dump_user_info(Formatter *f, RGWUserInfo &info,
   }
 
   f->close_section();
+  */
 }
 
 
@@ -1962,6 +1964,9 @@ int RGWUser::execute_add(RGWUserAdminOpState& op_state, std::string *err_msg)
   if (op_state.op_mask_specified)
     user_info.op_mask = op_state.get_op_mask();
 
+  if (op_state.s3api_mask_specified)
+    user_info.s3api_mask = op_state.s3api_mask;
+
   if (op_state.has_bucket_quota()) {
     user_info.bucket_quota = op_state.get_bucket_quota();
   } else {
@@ -2194,6 +2199,9 @@ int RGWUser::execute_modify(RGWUserAdminOpState& op_state, std::string *err_msg)
 
   if (op_state.op_mask_specified)
     user_info.op_mask = op_state.get_op_mask();
+
+  if (op_state.has_s3api_mask())
+    user_info.s3api_mask = op_state.s3api_mask;
 
   if (op_state.has_bucket_quota())
     user_info.bucket_quota = op_state.get_bucket_quota();
