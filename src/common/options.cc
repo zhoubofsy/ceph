@@ -5329,8 +5329,12 @@ std::vector<Option> get_rgw_options() {
     .set_default(false)
     .set_description("Should S3 authentication use Keystone."),
 
+    Option("rgw_s3_auth_use_token", Option::TYPE_BOOL, Option::LEVEL_ADVANCED)
+    .set_default(true)
+    .set_description("Should S3 authentication use Token."),
+
     Option("rgw_s3_auth_order", Option::TYPE_STR, Option::LEVEL_ADVANCED)
-     .set_default("external, local")
+     .set_default("external, token, local")
      .set_description("Authentication strategy order to use for s3 authentication")
      .set_long_description(
 	  "Order of authentication strategies to try for s3 authentication, the allowed "
@@ -5743,6 +5747,19 @@ std::vector<Option> get_rgw_options() {
     .set_default(16)
     .set_description("Max number of keys to remove from garbage collector log in a single operation")
     .add_see_also({"rgw_gc_max_objs", "rgw_gc_obj_min_wait", "rgw_gc_processor_max_time", "rgw_gc_max_concurrent_io"}),
+
+    Option("rgw_gd_token_processor_period", Option::TYPE_INT, Option::LEVEL_ADVANCED)
+    .set_default(5_min)
+    .set_description("Garbage dispose cycle run time")
+    .set_long_description(
+        "The amount of time between the start of consecutive runs of the garbage disposer "
+        "threads. If garbage disposer runs takes more than this period, it will not wait "
+        "before running again."),
+
+    Option("rgw_gd_token_processor_ratio", Option::TYPE_FLOAT, Option::LEVEL_BASIC)
+    .set_default(.85)
+    .set_description("Garbage dispose ratio")
+    .set_long_description("Token garbage dispose ratio."),
 
     Option("rgw_s3_success_create_obj_status", Option::TYPE_INT, Option::LEVEL_ADVANCED)
     .set_default(0)

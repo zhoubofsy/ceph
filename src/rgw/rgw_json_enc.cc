@@ -577,6 +577,8 @@ void RGWUserInfo::dump(Formatter *f) const
   encode_json("email", user_email, f);
   encode_json("suspended", (int)suspended, f);
   encode_json("max_buckets", (int)max_buckets, f);
+  encode_json("max_tokens", (int)max_tokens, f);
+  encode_json("token_valid_tm", token_valid_tm, f);
 
   encode_json("auid", auid, f);
 

@@ -106,6 +106,7 @@ set(rgw_a_srcs
   rgw_rest_config.cc
   rgw_rest_conn.cc
   rgw_rest_log.cc
+  rgw_rest_token.cc
   rgw_rest_metadata.cc
   rgw_rest_opstate.cc
   rgw_rest_realm.cc
@@ -129,7 +130,8 @@ set(rgw_a_srcs
   rgw_torrent.cc
   rgw_crypt.cc
   rgw_crypt_sanitize.cc
-  rgw_iam_policy.cc)
+  rgw_iam_policy.cc
+  rgw_inner_token.cc)
 
 gperf_generate(${CMAKE_SOURCE_DIR}/src/rgw/rgw_iam_policy_keywords.gperf
   rgw_iam_policy_keywords.frag.cc)

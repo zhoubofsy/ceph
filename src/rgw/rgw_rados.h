@@ -27,6 +27,7 @@
 #include "rgw_period_puller.h"
 #include "rgw_sync_module.h"
 #include "rgw_sync_log_trim.h"
+#include "rgw_inner_token.h"
 
 class RGWWatcher;
 class SafeTimer;
@@ -1172,6 +1173,7 @@ struct RGWZoneParams : RGWSystemMetaObj {
   rgw_pool user_email_pool;
   rgw_pool user_swift_pool;
   rgw_pool user_uid_pool;
+  rgw_pool user_token_pool;
   rgw_pool roles_pool;
   rgw_pool reshard_pool;
   rgw_pool otp_pool;
@@ -1208,7 +1210,7 @@ struct RGWZoneParams : RGWSystemMetaObj {
   const string& get_compression_type(const string& placement_rule) const;
   
   void encode(bufferlist& bl) const override {
-    ENCODE_START(12, 1, bl);
+    ENCODE_START(13, 1, bl);
     encode(domain_root, bl);
     encode(control_pool, bl);
     encode(gc_pool, bl);
@@ -1231,11 +1233,12 @@ struct RGWZoneParams : RGWSystemMetaObj {
     encode(reshard_pool, bl);
     encode(otp_pool, bl);
     encode(tier_config, bl);
+    encode(user_token_pool, bl);
     ENCODE_FINISH(bl);
   }
 
   void decode(bufferlist::iterator& bl) override {
-    DECODE_START(12, bl);
+    DECODE_START(13, bl);
     decode(domain_root, bl);
     decode(control_pool, bl);
     decode(gc_pool, bl);
@@ -1291,6 +1294,11 @@ struct RGWZoneParams : RGWSystemMetaObj {
       for (auto& kv : old_tier_config) {
         tier_config.set(kv.first, kv.second);
       }
+    }
+    if (struct_v >= 13) {
+      decode(user_token_pool, bl);
+    } else {
+      user_token_pool = name + ".rgw.meta:users.token";
     }
     DECODE_FINISH(bl);
   }
@@ -2296,6 +2304,7 @@ class RGWRados : public AdminSocketHook
   RGWGC *gc;
   RGWLC *lc;
   RGWObjectExpirer *obj_expirer;
+  RGWGDToken *token_gd;
   bool use_gc_thread;
   bool use_lc_thread;
   bool quota_threads;
@@ -2392,7 +2401,7 @@ protected:
   RGWIndexCompletionManager *index_completion_manager{nullptr};
 public:
   RGWRados() : lock("rados_timer_lock"), watchers_lock("watchers_lock"), timer(NULL),
-               gc(NULL), lc(NULL), obj_expirer(NULL), use_gc_thread(false), use_lc_thread(false), quota_threads(false),
+               gc(NULL), lc(NULL), obj_expirer(NULL), token_gd(NULL), use_gc_thread(false), use_lc_thread(false), quota_threads(false),
                run_sync_thread(false), run_reshard_thread(false), async_rados(nullptr), meta_notifier(NULL),
                data_notifier(NULL), meta_sync_processor_thread(NULL),
                meta_sync_thread_lock("meta_sync_thread_lock"), data_sync_thread_lock("data_sync_thread_lock"),
@@ -2412,6 +2421,10 @@ public:
                rest_master_conn(NULL),
                meta_mgr(NULL), data_log(NULL), reshard(NULL) {}
 
+  void wakeup_token_gd() {
+    if(token_gd != NULL)
+      token_gd->wakeup();
+  }
   uint64_t get_new_req_id() {
     return ++max_req_id;
   }

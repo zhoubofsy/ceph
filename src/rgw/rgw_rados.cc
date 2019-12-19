@@ -1714,6 +1714,7 @@ int get_zones_pool_set(CephContext* cct,
       pool_names.insert(zone.otp_pool);
       pool_names.insert(zone.roles_pool);
       pool_names.insert(zone.reshard_pool);
+      pool_names.insert(zone.user_token_pool);
       for(auto& iter : zone.placement_pools) {
 	pool_names.insert(iter.second.index_pool);
 	pool_names.insert(iter.second.data_pool);
@@ -1784,6 +1785,7 @@ int RGWZoneParams::fix_pool_names()
   user_swift_pool = fix_zone_pool_dup(pools, name, ".rgw.meta:users.swift", user_swift_pool);
   user_uid_pool = fix_zone_pool_dup(pools, name, ".rgw.meta:users.uid", user_uid_pool);
   roles_pool = fix_zone_pool_dup(pools, name, ".rgw.meta:roles", roles_pool);
+  user_token_pool = fix_zone_pool_dup(pools, name, ".rgw.meta:users.token", user_token_pool);
   reshard_pool = fix_zone_pool_dup(pools, name, ".rgw.log:reshard", reshard_pool);
   otp_pool = fix_zone_pool_dup(pools, name, ".rgw.otp", otp_pool);
 
@@ -3759,6 +3761,9 @@ void RGWRados::finalize()
     delete async_rados;
   }
   
+  delete token_gd;
+  token_gd = NULL;
+
   delete lc;
   lc = NULL; 
 
@@ -4689,6 +4694,9 @@ int RGWRados::init_complete()
   if (run_reshard_thread)  {
     reshard->start_processor();
   }
+
+  token_gd = new RGWGDToken(cct, this);
+  token_gd->start();
 
   index_completion_manager = new RGWIndexCompletionManager(this);
   ret = index_completion_manager->start();

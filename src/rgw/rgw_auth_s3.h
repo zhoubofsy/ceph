@@ -102,6 +102,7 @@ class AWSAuthStrategy : public rgw::auth::Strategy,
   S3AnonymousEngine anonymous_engine;
   ExternalAuthStrategy external_engines;
   LocalEngine local_engine;
+  TokenEngine token_engine;
 
   aplptr_t create_apl_local(CephContext* const cct,
                             const req_state* const s,
@@ -136,8 +137,8 @@ public:
   {
     std::vector <std::string> result;
 
-    const std::set <std::string_view> allowed_auth = { "external", "local" };
-    std::vector <std::string> default_order = { "external", "local"};
+    const std::set <std::string_view> allowed_auth = { "external", "token", "local" };
+    std::vector <std::string> default_order = { "external", "token", "local"};
     // supplied strings may contain a space, so let's bypass that
     boost::split(result, cct->_conf->rgw_s3_auth_order,
 		 boost::is_any_of(", "), boost::token_compress_on);
@@ -158,6 +159,8 @@ public:
                        static_cast<rgw::auth::LocalApplier::Factory*>(this)),
       external_engines(cct, store, &ver_abstractor),
       local_engine(cct, store, ver_abstractor,
+                   static_cast<rgw::auth::LocalApplier::Factory*>(this)),
+      token_engine(cct, store, ver_abstractor,
                    static_cast<rgw::auth::LocalApplier::Factory*>(this)) {
     /* The anonymous auth. */
     if (AllowAnonAccessT) {
@@ -173,6 +176,10 @@ public:
     /* The local auth. */
     if (cct->_conf->rgw_s3_auth_use_rados) {
       engine_map.insert(std::make_pair("local", std::cref(local_engine)));
+    }
+    /* The token auth. */
+    if (cct->_conf->rgw_s3_auth_use_token) {
+      engine_map.insert(std::make_pair("token", std::cref(token_engine)));
     }
     add_engines(auth_order, engine_map);
   }
