@@ -789,4 +789,8 @@ class RGWMetadataManager;
 
 extern void rgw_user_init(RGWRados *store);
 
+extern int set_bucket_quota(RGWRados *store,
+                     const string& tenant_name, const string& bucket_name,
+                     int64_t max_size, int64_t max_objects,
+                     bool have_max_size, bool have_max_objects, bool enable, bool has_enable);
 #endif
