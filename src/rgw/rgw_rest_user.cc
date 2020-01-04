@@ -1022,6 +1022,30 @@ void RGWOp_Quota_Set::execute()
     return;
   }
 
+  if (!quota_type.empty() && quota_type == "singlebucket") {
+    auto p = uid_str.find('$');
+    std::string tenant = (p == std::string::npos) ? "" : uid_str.substr(0, p);
+    std::string bucket_name = (p == std::string::npos) ? uid_str : uid_str.substr(p+1);
+
+    int64_t max_objects;
+    bool has_max_objects;
+    RESTArgs::get_int64(s, "max-objects", -1, &max_objects, &has_max_objects);
+
+    int64_t max_size;
+    int64_t max_size_kb;
+    bool has_max_size_kb;
+    RESTArgs::get_int64(s, "max-size-kb", -1, &max_size_kb, &has_max_size_kb);
+    if(has_max_size_kb)
+      max_size = max_size_kb * 1024;
+
+    bool enable = false;
+    bool has_enable;
+    RESTArgs::get_bool(s, "enabled", false, &enable, &has_enable);
+
+    http_ret = set_bucket_quota(store, tenant, bucket_name, max_size, max_objects, has_max_size_kb, has_max_objects, enable, has_enable);
+    return;
+  }
+
   rgw_user uid(uid_str);
 
   bool set_all = quota_type.empty();

@@ -4266,6 +4266,58 @@ void rgw::auth::s3::LDAPEngine::shutdown() {
   }
 }
 
+/* TokenEngine */
+rgw::auth::Engine::result_t
+rgw::auth::s3::TokenEngine::authenticate(
+  const boost::string_view& _access_key_id,
+  const boost::string_view& signature,
+  const string_to_sign_t& string_to_sign,
+  const signature_factory_t& signature_factory,
+  const completer_factory_t& completer_factory,
+  const req_state* const s) const
+{
+  rgwinner::Token token;
+  try {
+    token = rgw::from_base64(_access_key_id);
+  } catch (...) {
+    return result_t::deny();
+  }
+  if(!token.valid())
+    return result_t::deny();
+
+  RGWUserInfo user_info;
+  const std::string access_key_id = token.get_access_key();
+  if(rgw_get_user_info_by_access_key(store, access_key_id, user_info) < 0) {
+    ldout(cct, 5) << "error reading user info, uid=" << access_key_id << " can't authenticate" << dendl;
+    return result_t::deny(-ERR_INVALID_ACCESS_KEY);
+  }
+  
+  // Calculator Signature
+  const auto iter = user_info.access_keys.find(access_key_id);
+  if (iter == std::end(user_info.access_keys)) {
+    ldout(cct, 0) << "ERROR: access key not encoded in user info" << dendl;
+    return result_t::deny(-EPERM);
+  }
+  const RGWAccessKey& k = iter->second;
+  const VersionAbstractor::server_signature_t server_signature = signature_factory(cct, k.key, string_to_sign);
+  auto compare = signature.compare(server_signature);
+  ldout(cct, 15) << "string_to_sign=" << rgw::crypt_sanitize::log_content{string_to_sign} << dendl;
+  ldout(cct, 15) << "server signature=" << server_signature << dendl;
+  ldout(cct, 15) << "client signature=" << signature << dendl;
+  ldout(cct, 15) << "compare=" << compare << dendl;
+  if (compare != 0) {
+    return result_t::deny(-ERR_SIGNATURE_NO_MATCH);
+  }
+
+  // Token
+  rgwinner::TokenHelper th(store);
+  if(th.auth(_access_key_id) < 0) {
+    return result_t::deny(-ERR_INVALID_TOKEN);
+  }
+  auto apl = apl_factory->create_apl_local(cct, s, user_info, k.subuser);
+  return result_t::grant(std::move(apl), completer_factory(k.key));
+}
+
 /* LocalEndgine */
 rgw::auth::Engine::result_t
 rgw::auth::s3::LocalEngine::authenticate(

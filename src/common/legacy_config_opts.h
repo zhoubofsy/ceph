@@ -1327,6 +1327,7 @@ OPTION(rgw_cross_domain_policy, OPT_STR)
 OPTION(rgw_healthcheck_disabling_path, OPT_STR) // path that existence causes the healthcheck to respond 503
 OPTION(rgw_s3_auth_use_rados, OPT_BOOL)  // should we try to use the internal credentials for s3?
 OPTION(rgw_s3_auth_use_keystone, OPT_BOOL)  // should we try to use keystone for s3?
+OPTION(rgw_s3_auth_use_token, OPT_BOOL) // should we try to use the inner token for s3?
 OPTION(rgw_s3_auth_order, OPT_STR) // s3 authentication order to try
 OPTION(rgw_barbican_url, OPT_STR)  // url for barbican server
 
@@ -1414,6 +1415,8 @@ OPTION(rgw_gc_processor_max_time, OPT_INT)  // total run time for a single gc pr
 OPTION(rgw_gc_processor_period, OPT_INT)  // gc processor cycle time
 OPTION(rgw_gc_max_concurrent_io, OPT_INT)  // gc processor cycle time
 OPTION(rgw_gc_max_trim_chunk, OPT_INT)  // gc trim chunk size
+OPTION(rgw_gd_token_processor_period, OPT_INT) // gd processor cycle time
+OPTION(rgw_gd_token_processor_ratio, OPT_FLOAT) // gd processor ratio
 OPTION(rgw_s3_success_create_obj_status, OPT_INT) // alternative success status response for create-obj (0 - default)
 OPTION(rgw_resolve_cname, OPT_BOOL)  // should rgw try to resolve hostname as a dns cname record
 OPTION(rgw_obj_stripe_size, OPT_INT)

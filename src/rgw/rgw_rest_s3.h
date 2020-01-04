@@ -850,6 +850,33 @@ public:
   static void shutdown();
 };
 
+class TokenEngine : public AWSEngine {
+private:
+  RGWRados* const store;
+  const rgw::auth::LocalApplier::Factory* const apl_factory;
+
+  result_t authenticate(const boost::string_view& access_key_id,
+                        const boost::string_view& signature,
+                        const string_to_sign_t& string_to_sign,
+                        const signature_factory_t& signature_factory,
+                        const completer_factory_t& completer_factory,
+                        const req_state* s) const override;
+public:
+  TokenEngine(CephContext* const cct,
+              RGWRados* const store,
+              const VersionAbstractor& ver_abstractor,
+              const rgw::auth::LocalApplier::Factory* const apl_factory)
+    : AWSEngine(cct, ver_abstractor),
+      store(store),
+      apl_factory(apl_factory) {
+  }
+
+  using AWSEngine::authenticate;
+
+  const char* get_name() const noexcept override {
+    return "rgw::auth::s3::TokenEngine";
+  }
+};
 
 class LocalEngine : public AWSEngine {
   RGWRados* const store;

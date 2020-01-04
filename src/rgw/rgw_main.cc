@@ -25,6 +25,7 @@
 #include "rgw_rest_bucket.h"
 #include "rgw_rest_metadata.h"
 #include "rgw_rest_log.h"
+#include "rgw_rest_token.h"
 #include "rgw_rest_opstate.h"
 #include "rgw_replica_log.h"
 #include "rgw_rest_replica_log.h"
@@ -404,6 +405,7 @@ int main(int argc, const char **argv)
     admin_resource->register_resource("replica_log", new RGWRESTMgr_ReplicaLog);
     admin_resource->register_resource("config", new RGWRESTMgr_Config);
     admin_resource->register_resource("realm", new RGWRESTMgr_Realm);
+    admin_resource->register_resource("token", new RGWRESTMgr_Token);
     rest.register_resource(g_conf->rgw_admin_entry, admin_resource);
   }
 

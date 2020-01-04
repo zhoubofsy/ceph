@@ -2743,6 +2743,10 @@ int main(int argc, const char **argv)
   int check_head_obj_locator = false;
   int max_buckets = -1;
   bool max_buckets_specified = false;
+  int max_tokens = -1;
+  uint64_t token_valid_tm = 0;
+  bool max_tokens_specified = false;
+  bool max_token_valid_tm_specified = false;
   map<string, bool> categories;
   string caps;
   int check_objects = false;
@@ -2924,6 +2928,20 @@ int main(int argc, const char **argv)
         return EINVAL;
       }
       max_buckets_specified = true;
+    } else if (ceph_argparse_witharg(args, i, &val, "--max-tokens", (char*)NULL)) {
+      max_tokens = (int)strict_strtol(val.c_str(), 10, &err);
+      if (!err.empty()) {
+        cerr << "ERROR: failed to parse max tokens: " << err << std::endl;
+        return EINVAL;
+      }
+      max_tokens_specified = true;
+    } else if (ceph_argparse_witharg(args, i, &val, "--token-valid-tm", (char*)NULL)) {
+      token_valid_tm = (uint64_t)strict_strtol(val.c_str(), 10, &err);
+      if (!err.empty()) {
+        cerr << "ERROR: failed to parse tokan valid time: " << err << std::endl;
+        return EINVAL;
+      }
+      max_token_valid_tm_specified = true;
     } else if (ceph_argparse_witharg(args, i, &val, "--max-entries", (char*)NULL)) {
       max_entries = (int)strict_strtol(val.c_str(), 10, &err);
       max_entries_specified = true;
@@ -4857,6 +4875,12 @@ int main(int argc, const char **argv)
 
   if (max_buckets_specified)
     user_op.set_max_buckets(max_buckets);
+
+  if (max_tokens_specified)
+    user_op.set_max_tokens(max_tokens);
+
+  if (max_token_valid_tm_specified)
+    user_op.set_token_valid_tm(token_valid_tm);
 
   if (admin_specified)
      user_op.set_admin(admin);

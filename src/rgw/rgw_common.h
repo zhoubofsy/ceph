@@ -33,6 +33,7 @@
 #include "cls/user/cls_user_types.h"
 #include "cls/rgw/cls_rgw_types.h"
 #include "include/rados/librados.hpp"
+#include "rgw_b64.h"
 
 namespace ceph {
   class Formatter;
@@ -250,6 +251,8 @@ using ceph::crypto::MD5;
 #define RGW_S3MASKNM_TAGS_DELETE            "DeleteTags"
 
 #define RGW_DEFAULT_MAX_BUCKETS 1000
+#define RGW_DEFAULT_MAX_TOKENS 128
+#define RGW_DEFAULT_TOKEN_VALID_TM (5*60) // 5 min
 
 #define RGW_DEFER_TO_BUCKET_ACLS_RECURSE 1
 #define RGW_DEFER_TO_BUCKET_ACLS_FULL_CONTROL 2
@@ -308,6 +311,7 @@ using ceph::crypto::MD5;
 #define ERR_NO_SUCH_SUBUSER      2043
 #define ERR_MFA_REQUIRED         2044
 #define ERR_NO_SUCH_CORS_CONFIGURATION 2045
+#define ERR_INVALID_TOKEN        2046
 #define ERR_USER_SUSPENDED       2100
 #define ERR_INTERNAL_ERROR       2200
 #define ERR_NOT_IMPLEMENTED      2201
@@ -833,6 +837,8 @@ struct RGWUserInfo
   map<string, RGWSubUser> subusers;
   __u8 suspended;
   int32_t max_buckets;
+  int32_t max_tokens;
+  uint64_t token_valid_tm;
   uint32_t op_mask;
   RGWS3IFMask s3api_mask;
   RGWUserCaps caps;
@@ -850,6 +856,8 @@ struct RGWUserInfo
     : auid(0),
       suspended(0),
       max_buckets(RGW_DEFAULT_MAX_BUCKETS),
+      max_tokens(RGW_DEFAULT_MAX_TOKENS),
+      token_valid_tm(RGW_DEFAULT_TOKEN_VALID_TM),
       op_mask(RGW_OP_TYPE_ALL),
       admin(0),
       system(0),
@@ -868,7 +876,7 @@ struct RGWUserInfo
   }
 
   void encode(bufferlist& bl) const {
-     ENCODE_START(21, 9, bl);
+     ENCODE_START(23, 9, bl);
      encode(auid, bl);
      string access_key;
      string secret_key;
@@ -911,10 +919,12 @@ struct RGWUserInfo
      encode(type, bl);
      encode(mfa_ids, bl);
      encode(s3api_mask, bl);
+     encode(max_tokens, bl);
+     encode(token_valid_tm, bl);
      ENCODE_FINISH(bl);
   }
   void decode(bufferlist::iterator& bl) {
-     DECODE_START_LEGACY_COMPAT_LEN_32(21, 9, 9, bl);
+     DECODE_START_LEGACY_COMPAT_LEN_32(22, 9, 9, bl);
      if (struct_v >= 2) decode(auid, bl);
      else auid = CEPH_AUTH_UID_DEFAULT;
      string access_key;
@@ -992,6 +1002,16 @@ struct RGWUserInfo
     }
     if (struct_v >= 21) {
       decode(s3api_mask, bl);
+    }
+    if (struct_v >= 22) {
+      decode(max_tokens, bl);
+    } else {
+      max_tokens = RGW_DEFAULT_MAX_TOKENS;
+    }
+    if (struct_v >= 23) {
+      decode(token_valid_tm, bl);
+    } else {
+      token_valid_tm = RGW_DEFAULT_TOKEN_VALID_TM;
     }
     DECODE_FINISH(bl);
   }
@@ -2693,4 +2713,163 @@ static inline ssize_t rgw_unescape_str(const string& s, ssize_t ofs,
   return string::npos;
 }
 
+namespace rgwinner {
+  class Token;
+  class TokenMgr {
+    // Need a lock , between admin rest create and gc delete.
+    private:
+      std::list<string>  token_list;
+      RGWRados           *store;
+      rgw_user           *user_id;
+    public:
+      TokenMgr() = default;
+      ~TokenMgr() = default;
+      int init(RGWRados *store, rgw_user *u);
+      int32_t count();
+      int add_token(boost::string_view tid, const Token& token);
+      int rm_token(boost::string_view tid);
+      int add_tid(boost::string_view tid);
+      int del_tid(boost::string_view tid);
+      class Iterator {
+        private:
+          std::list<string>::iterator it;
+          TokenMgr *tk_mgr;
+        public:
+          Iterator(TokenMgr* t):it(t->token_list.begin()),tk_mgr(t) {}
+          ~Iterator() = default;
+          std::string get_next() {
+            return it == tk_mgr->token_list.end() ? "" : *it++ ;
+          }
+      };
+      void encode(bufferlist& bl) const {
+        int32_t count = token_list.size();
+        ENCODE_START(1,1,bl);
+        encode(count,bl);
+        for(string tkn_id : token_list) {
+          encode(tkn_id, bl);
+        }
+        ENCODE_FINISH(bl);
+      }
+      void decode(bufferlist::iterator& bl) {
+        std::string token;
+        int32_t count;
+        token_list.clear();
+        DECODE_START(1,bl);
+        decode(count, bl);
+        for(int32_t i=0; i<count; i++) {
+          decode(token, bl);
+          token_list.push_back(token);
+        }
+        DECODE_FINISH(bl);
+      }
+  };
+  WRITE_CLASS_ENCODER(TokenMgr)
+
+  class Token {
+    private:
+      RGWRados      *store;
+      std::string   access_key;
+      time_t        create;
+    public:
+      enum token_type : uint32_t {
+        TOKEN_NONE,
+        TOKEN_TIME
+      };
+      static token_type to_type(const std::string& s) {
+        if (boost::iequals(s, "time"))
+          return TOKEN_TIME;
+        return TOKEN_NONE;
+      }
+      static const char* from_type(token_type t) {
+        switch(t) {
+          case TOKEN_TIME:
+            return "time";
+          default:
+            return "none";
+        }
+        return "none";
+      }
+      Token():type(TOKEN_NONE) {
+        utime_t now = ceph_clock_now();
+        create = now.sec();
+      }
+      Token(const std::string& json) {
+        JSONParser p;
+        p.parse(json.c_str(), json.length());
+        JSONDecoder::decode_json("inner_token", *this, &p);
+      }
+      ~Token() = default;
+      int init(RGWRados *store, std::string_view ak);
+      std::string get_access_key() {return access_key;}
+      // long get_create_tick() {return (long)(create);}
+      int auth();
+
+      bool valid() const{
+        return ((type != TOKEN_NONE) && (!access_key.empty()) && (expire != 0 ));
+      }
+      token_type    type;
+      uint64_t      expire;
+
+      static std::string generate_key(std::string base64_token);
+      void encode(bufferlist& bl) const {
+        ENCODE_START(1,1,bl);
+        encode(access_key, bl);
+        encode(from_type(type), bl);
+        encode(ctime(&create), bl);
+        encode(expire, bl);
+        ENCODE_FINISH(bl);
+      }
+      void decode(bufferlist::iterator& bl) {
+        string typestr;
+        string create_time_str;
+        DECODE_START(1,bl);
+        decode(access_key, bl);
+        decode(typestr, bl);
+        decode(create_time_str, bl);
+        decode(expire, bl);
+        DECODE_FINISH(bl);
+        type = to_type(typestr);
+        utime_t create_time;
+        utime_t::invoke_date(create_time_str, &create_time);
+        create = create_time.sec();
+      }
+
+      void dump(Formatter *f) const {
+        ::encode_json("Access", access_key, f);
+        ::encode_json("Type", from_type(type), f);
+        ::encode_json("cTime", (long)(create), f);
+        ::encode_json("Expire", expire, f);
+      }
+      std::string encode_json_base64() {
+        Formatter *f = new JSONFormatter(true);
+        f->open_object_section("inner_token");
+        ::encode_json("inner_token", *this, f);
+        f->close_section();
+        std::ostringstream os;
+        f->flush(os);
+        //ldout(store->ctx(), 20) << os.str() << dendl;
+        return rgw::to_base64(std::move(os.str()));
+      }
+      void decode_json(JSONObj* obj) {
+        string typestr;
+        long c;
+        JSONDecoder::decode_json("Access", access_key, obj);
+        JSONDecoder::decode_json("Type", typestr, obj);
+        type = to_type(typestr);
+        JSONDecoder::decode_json("cTime", c, obj);
+        create = (time_t)(c); 
+        JSONDecoder::decode_json("Expire", expire, obj);
+      }
+  };
+  WRITE_CLASS_ENCODER(Token)
+
+  class TokenHelper {
+    private:
+      RGWRados      *store;
+    public:
+      TokenHelper(RGWRados* s):store(s){}
+      ~TokenHelper() = default;
+      int auth(boost::string_view t);
+  };
+}
 #endif

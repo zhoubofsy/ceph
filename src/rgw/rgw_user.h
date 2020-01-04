@@ -160,6 +160,8 @@ struct RGWUserAdminOpState {
   std::string user_email;
   std::string display_name;
   int32_t max_buckets;
+  int32_t max_tokens;
+  uint64_t token_valid_tm;
   __u8 suspended;
   __u8 admin;
   __u8 system;
@@ -201,6 +203,8 @@ struct RGWUserAdminOpState {
   bool display_name_specified;
   bool user_email_specified;
   bool max_buckets_specified;
+  bool max_tokens_specified;
+  bool token_valid_tm_specified;
   bool perm_specified;
   bool op_mask_specified;
   bool s3api_mask_specified;
@@ -361,6 +365,16 @@ struct RGWUserAdminOpState {
     max_buckets_specified = true;
   }
 
+  void set_max_tokens(int32_t mt) {
+    max_tokens = mt;
+    max_tokens_specified = true;
+  }
+
+  void set_token_valid_tm(uint64_t tvt) {
+    token_valid_tm = tvt;
+    token_valid_tm_specified = true;
+  }
+
   void set_gen_access() {
     gen_access = true;
     key_op = true;
@@ -438,6 +452,8 @@ struct RGWUserAdminOpState {
   int32_t get_key_type() {return key_type; }
   uint32_t get_subuser_perm() { return perm_mask; }
   int32_t get_max_buckets() { return max_buckets; }
+  int32_t get_max_tokens() { return max_tokens; }
+  uint64_t get_token_valid_tm() { return token_valid_tm; }
   uint32_t get_op_mask() { return op_mask; }
   RGWS3IFMask& get_s3api_mask() { return s3api_mask; }
   RGWQuotaInfo& get_bucket_quota() { return bucket_quota; }
@@ -499,6 +515,8 @@ struct RGWUserAdminOpState {
   RGWUserAdminOpState() : user_id(RGW_USER_ANON_ID)
   {
     max_buckets = RGW_DEFAULT_MAX_BUCKETS;
+    max_tokens = RGW_DEFAULT_MAX_TOKENS;
+    token_valid_tm = RGW_DEFAULT_TOKEN_VALID_TM;
     key_type = -1;
     perm_mask = RGW_PERM_NONE;
     suspended = 0;
@@ -526,6 +544,8 @@ struct RGWUserAdminOpState {
     display_name_specified = false;
     user_email_specified = false;
     max_buckets_specified = false;
+    max_tokens_specified = false;
+    token_valid_tm_specified = false;
     perm_specified = false;
     op_mask_specified = false;
     s3api_mask_specified = false;
@@ -769,4 +789,8 @@ class RGWMetadataManager;
 
 extern void rgw_user_init(RGWRados *store);
 
+extern int set_bucket_quota(RGWRados *store,
+                     const string& tenant_name, const string& bucket_name,
+                     int64_t max_size, int64_t max_objects,
+                     bool have_max_size, bool have_max_objects, bool enable, bool has_enable);
 #endif

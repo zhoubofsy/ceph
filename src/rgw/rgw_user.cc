@@ -1957,6 +1957,12 @@ int RGWUser::execute_add(RGWUserAdminOpState& op_state, std::string *err_msg)
     user_info.max_buckets = cct->_conf->rgw_user_max_buckets;
   }
 
+  if (op_state.max_tokens_specified)
+    user_info.max_tokens = op_state.get_max_tokens();
+
+  if (op_state.token_valid_tm_specified)
+    user_info.token_valid_tm = op_state.get_token_valid_tm();
+
   user_info.suspended = op_state.get_suspension_status();
   user_info.admin = op_state.admin;
   user_info.system = op_state.system;
@@ -2182,6 +2188,12 @@ int RGWUser::execute_modify(RGWUserAdminOpState& op_state, std::string *err_msg)
 
   if (op_state.max_buckets_specified)
     user_info.max_buckets = op_state.get_max_buckets();
+
+  if (op_state.max_tokens_specified)
+    user_info.max_tokens = op_state.get_max_tokens();
+
+  if (op_state.token_valid_tm_specified)
+    user_info.token_valid_tm = op_state.get_token_valid_tm();
 
   if (op_state.admin_specified)
     user_info.admin = op_state.admin;
@@ -2822,4 +2834,49 @@ void rgw_user_init(RGWRados *store)
 
   user_meta_handler = new RGWUserMetadataHandler;
   store->meta_mgr->register_handler(user_meta_handler);
+}
+
+void set_quota_info(RGWQuotaInfo& quota, int64_t max_size, int64_t max_objects,
+                    bool have_max_size, bool have_max_objects, bool enable, bool has_enable)
+{
+    if(has_enable)
+      quota.enabled = enable;
+    if (have_max_objects) {
+      if (max_objects < 0) {
+        quota.max_objects = -1;
+      } else {
+        quota.max_objects = max_objects;
+      }
+    }
+    if (have_max_size) {
+      if (max_size < 0) {
+        quota.max_size = -1;
+      } else {
+        quota.max_size = max_size;
+      }
+    }
+}
+
+int set_bucket_quota(RGWRados *store,
+                     const string& tenant_name, const string& bucket_name,
+                     int64_t max_size, int64_t max_objects,
+                     bool have_max_size, bool have_max_objects, bool enable, bool has_enable)
+{
+  RGWBucketInfo bucket_info;
+  map<string, bufferlist> attrs;
+  RGWObjectCtx obj_ctx(store);
+  int r = store->get_bucket_info(obj_ctx, tenant_name, bucket_name, bucket_info, NULL, &attrs);
+  if (r < 0) {
+    ldout(store->ctx(), 0) << "could not get bucket info for bucket=" << bucket_name << ": " << -r << dendl;
+    return -r;
+  }
+
+  set_quota_info(bucket_info.quota, max_size, max_objects, have_max_size, have_max_objects, enable, has_enable);
+
+   r = store->put_bucket_instance_info(bucket_info, false, real_time(), &attrs);
+  if (r < 0) {
+    ldout(store->ctx(), 0) << "ERROR: failed writing bucket instance info: " << -r << dendl;
+    return -r;
+  }
+  return 0;
 }
