@@ -89,6 +89,8 @@ void RGWOp_User_Create::execute()
   bool system;
   bool exclusive;
 
+  int32_t max_tokens;
+  int32_t token_valid_tm;
   int32_t max_buckets;
   int32_t default_max_buckets = s->cct->_conf->rgw_user_max_buckets;
 
@@ -111,6 +113,8 @@ void RGWOp_User_Create::execute()
   RESTArgs::get_bool(s, "exclusive", false, &exclusive);
   RESTArgs::get_string(s, "op-mask", op_mask, &op_mask);
   RESTArgs::get_string(s, "api-mask", api_mask, &api_mask);
+  RESTArgs::get_int32(s, "max-tokens", RGW_DEFAULT_MAX_TOKENS, &max_tokens);
+  RESTArgs::get_int32(s, "token-valid-tm", RGW_DEFAULT_TOKEN_VALID_TM, &token_valid_tm);
 
   if (!s->user->system && system) {
     ldout(s->cct, 0) << "cannot set system flag by non-system user" << dendl;
@@ -261,6 +265,12 @@ void RGWOp_User_Create::execute()
   if (max_buckets != default_max_buckets)
     op_state.set_max_buckets(max_buckets);
 
+  if (max_tokens != RGW_DEFAULT_MAX_TOKENS)
+    op_state.set_max_tokens(max_tokens);
+
+  if (token_valid_tm != RGW_DEFAULT_TOKEN_VALID_TM)
+    op_state.set_token_valid_tm(token_valid_tm);
+
   if (s->info.args.exists("suspended"))
     op_state.set_suspension(suspended);
 
@@ -308,6 +318,10 @@ void RGWOp_User_Modify::execute()
   bool email_set;
   bool quota_set;
   int32_t max_buckets;
+  bool max_tokens_set;
+  int32_t max_tokens;
+  bool token_valid_tm_set;
+  int32_t token_valid_tm;
 
   RGWUserAdminOpState op_state;
 
@@ -326,6 +340,8 @@ void RGWOp_User_Modify::execute()
   RESTArgs::get_string(s, "op-mask", op_mask, &op_mask);
   RESTArgs::get_string(s, "api-mask", api_mask, &api_mask);
   RESTArgs::get_bool(s, "system", false, &system);
+  RESTArgs::get_int32(s, "max-tokens", RGW_DEFAULT_MAX_TOKENS, &max_tokens, &max_tokens_set);
+  RESTArgs::get_int32(s, "token-valid-tm", RGW_DEFAULT_TOKEN_VALID_TM, &token_valid_tm, &token_valid_tm_set);
 
   if (!s->user->system && system) {
     ldout(s->cct, 0) << "cannot set system flag by non-system user" << dendl;
@@ -459,6 +475,10 @@ void RGWOp_User_Modify::execute()
   op_state.set_access_key(access_key);
   op_state.set_secret_key(secret_key);
 
+  if (max_tokens_set)
+    op_state.set_max_tokens(max_tokens);
+  if (token_valid_tm_set)
+    op_state.set_token_valid_tm(token_valid_tm);
   if (quota_set)
     op_state.set_max_buckets(max_buckets);
 
