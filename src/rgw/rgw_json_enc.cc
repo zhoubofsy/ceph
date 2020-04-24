@@ -592,7 +592,7 @@ void RGWUserInfo::dump(Formatter *f) const
   op_type_to_str(op_mask, buf, sizeof(buf));
   encode_json("op_mask", (const char *)buf, f);
 
-  char s3api_mask_buf[256];
+  char s3api_mask_buf[1024];
   s3api_mask_to_str(s3api_mask, s3api_mask_buf, sizeof(s3api_mask_buf));
   encode_json("api_mask", (const char *)s3api_mask_buf, f);
 
