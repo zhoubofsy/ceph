@@ -39,6 +39,19 @@ void rgw_get_anon_user(RGWUserInfo& info)
   info.user_id = RGW_USER_ANON_ID;
   info.display_name.clear();
   info.access_keys.clear();
+  info.s3api_mask.set_mask(TYPE_S3MASK_OP_BASIC, RGW_S3MASK_BASIC_ALL);
+  info.s3api_mask.set_mask(TYPE_S3MASK_OP_LOGGING, RGW_S3MASK_LOGGING_ALL);
+  info.s3api_mask.set_mask(TYPE_S3MASK_OP_LOCATION, RGW_S3MASK_LOCATION_ALL);
+  info.s3api_mask.set_mask(TYPE_S3MASK_OP_VERSIONING, RGW_S3MASK_VERSIONING_ALL);
+  info.s3api_mask.set_mask(TYPE_S3MASK_OP_WEBSITE, RGW_S3MASK_WEBSITE_ALL);
+  info.s3api_mask.set_mask(TYPE_S3MASK_OP_METASEARCH, RGW_S3MASK_METASEARCH_ALL);
+  info.s3api_mask.set_mask(TYPE_S3MASK_OP_ACL, RGW_S3MASK_ACL_ALL);
+  info.s3api_mask.set_mask(TYPE_S3MASK_OP_CORS, RGW_S3MASK_CORS_ALL);
+  info.s3api_mask.set_mask(TYPE_S3MASK_OP_REQUEST_PAYMENT, RGW_S3MASK_REQPAYMENT_ALL);
+  info.s3api_mask.set_mask(TYPE_S3MASK_OP_LC, RGW_S3MASK_LC_ALL);
+  info.s3api_mask.set_mask(TYPE_S3MASK_OP_POLICY, RGW_S3MASK_POLICY_ALL);
+  info.s3api_mask.set_mask(TYPE_S3MASK_OP_MULTIPARTS, RGW_S3MASK_MULTIPARTS_ALL);
+  info.s3api_mask.set_mask(TYPE_S3MASK_OP_TAGS, RGW_S3MASK_TAGS_ALL);
 }
 
 int rgw_user_sync_all_stats(RGWRados *store, const rgw_user& user_id)

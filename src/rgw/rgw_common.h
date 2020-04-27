@@ -172,19 +172,23 @@ using ceph::crypto::MD5;
 #define RGW_S3MASKNM_BASIC_STAT_BUCKET      "StatBucket"
 /*Logging*/
 #define RGW_S3MASK_LOGGING_GET              (0x01 << 0)
+#define RGW_S3MASK_LOGGING_ALL              (RGW_S3MASK_LOGGING_GET)
 #define RGW_S3MASKNM_LOGGING_GET            "GetLogging"
 /*Location*/
 #define RGW_S3MASK_LOCATION_GET             (0x01 << 0)
+#define RGW_S3MASK_LOCATION_ALL             (RGW_S3MASK_LOCATION_GET)
 #define RGW_S3MASKNM_LOCATION_GET           "GetLocation"
 /*Versioning*/
 #define RGW_S3MASK_VERSIONING_GET           (0x01 << 0)
 #define RGW_S3MASK_VERSIONING_SET           (0x01 << 1)
+#define RGW_S3MASK_VERSIONING_ALL           (RGW_S3MASK_VERSIONING_GET|RGW_S3MASK_VERSIONING_SET)
 #define RGW_S3MASKNM_VERSIONING_GET         "GetVersioning"
 #define RGW_S3MASKNM_VERSIONING_SET         "SetVersioning"
 /*WebSite*/
 #define RGW_S3MASK_WEBSITE_GET              (0x01 << 0)
 #define RGW_S3MASK_WEBSITE_SET              (0x01 << 1)
 #define RGW_S3MASK_WEBSITE_DELETE           (0x01 << 2)
+#define RGW_S3MASK_WEBSITE_ALL              (RGW_S3MASK_WEBSITE_GET|RGW_S3MASK_WEBSITE_SET|RGW_S3MASK_WEBSITE_DELETE)
 #define RGW_S3MASKNM_WEBSITE_GET            "GetWebsite"
 #define RGW_S3MASKNM_WEBSITE_SET            "SetWebsite"
 #define RGW_S3MASKNM_WEBSITE_DELETE         "DeleteWebsite"
@@ -192,12 +196,14 @@ using ceph::crypto::MD5;
 #define RGW_S3MASK_METASEARCH_GET           (0x01 << 0)
 #define RGW_S3MASK_METASEARCH_DELETE        (0x01 << 1)
 #define RGW_S3MASK_METASEARCH_CONFIG        (0x01 << 2)
+#define RGW_S3MASK_METASEARCH_ALL           (RGW_S3MASK_METASEARCH_GET|RGW_S3MASK_METASEARCH_DELETE|RGW_S3MASK_METASEARCH_CONFIG)
 #define RGW_S3MASKNM_METASEARCH_GET         "GetMetasearch"
 #define RGW_S3MASKNM_METASEARCH_DELETE      "DeleteMetasearch"
 #define RGW_S3MASKNM_METASEARCH_CONFIG      "ConfigMetasearch"
 /*ACL*/
 #define RGW_S3MASK_ACL_GET                  (0x01 << 0)
 #define RGW_S3MASK_ACL_PUT                  (0x01 << 1)
+#define RGW_S3MASK_ACL_ALL                  (RGW_S3MASK_ACL_GET|RGW_S3MASK_ACL_PUT)
 #define RGW_S3MASKNM_ACL_GET                "GetACL"
 #define RGW_S3MASKNM_ACL_PUT                "PutACL"
 /*CORS*/
@@ -205,6 +211,7 @@ using ceph::crypto::MD5;
 #define RGW_S3MASK_CORS_PUT                 (0x01 << 1)
 #define RGW_S3MASK_CORS_DELETE              (0x01 << 2)
 #define RGW_S3MASK_CORS_OPTIONS             (0x01 << 3)
+#define RGW_S3MASK_CORS_ALL                 (RGW_S3MASK_CORS_GET|RGW_S3MASK_CORS_PUT|RGW_S3MASK_CORS_DELETE|RGW_S3MASK_CORS_OPTIONS)
 #define RGW_S3MASKNM_CORS_GET               "GetCORS"
 #define RGW_S3MASKNM_CORS_PUT               "PutCORS"
 #define RGW_S3MASKNM_CORS_DELETE            "DeleteCORS"
@@ -212,12 +219,14 @@ using ceph::crypto::MD5;
 /*RequestPayment*/
 #define RGW_S3MASK_REQPAYMENT_GET           (0x01 << 0)
 #define RGW_S3MASK_REQPAYMENT_SET           (0x01 << 1)
+#define RGW_S3MASK_REQPAYMENT_ALL           (RGW_S3MASK_REQPAYMENT_GET|RGW_S3MASK_REQPAYMENT_SET)
 #define RGW_S3MASKNM_REQPAYMENT_GET         "GetReqPayment"
 #define RGW_S3MASKNM_REQPAYMENT_SET         "SetReqPayment"
 /*LC*/
 #define RGW_S3MASK_LC_GET                   (0x01 << 0)
 #define RGW_S3MASK_LC_PUT                   (0x01 << 1)
 #define RGW_S3MASK_LC_DELETE                (0x01 << 2)
+#define RGW_S3MASK_LC_ALL                   (RGW_S3MASK_LC_GET|RGW_S3MASK_LC_PUT|RGW_S3MASK_LC_DELETE)
 #define RGW_S3MASKNM_LC_GET                 "GetLC"
 #define RGW_S3MASKNM_LC_PUT                 "PutLC"
 #define RGW_S3MASKNM_LC_DELETE              "DeleteLC"
@@ -225,6 +234,7 @@ using ceph::crypto::MD5;
 #define RGW_S3MASK_POLICY_GET               (0x01 << 0)
 #define RGW_S3MASK_POLICY_PUT               (0x01 << 1)
 #define RGW_S3MASK_POLICY_DELETE            (0x01 << 2)
+#define RGW_S3MASK_POLICY_ALL               (RGW_S3MASK_POLICY_GET|RGW_S3MASK_POLICY_PUT|RGW_S3MASK_POLICY_DELETE)
 #define RGW_S3MASKNM_POLICY_GET             "GetPolicy"
 #define RGW_S3MASKNM_POLICY_PUT             "PutPolicy"
 #define RGW_S3MASKNM_POLICY_DELETE          "DeletePolicy"
@@ -246,6 +256,7 @@ using ceph::crypto::MD5;
 #define RGW_S3MASK_TAGS_GET                 (0x01 << 0)
 #define RGW_S3MASK_TAGS_PUT                 (0x01 << 1)
 #define RGW_S3MASK_TAGS_DELETE              (0x01 << 2)
+#define RGW_S3MASK_TAGS_ALL                 (RGW_S3MASK_TAGS_GET|RGW_S3MASK_TAGS_PUT|RGW_S3MASK_TAGS_DELETE)
 #define RGW_S3MASKNM_TAGS_GET               "GetTags"
 #define RGW_S3MASKNM_TAGS_PUT               "PutTags"
 #define RGW_S3MASKNM_TAGS_DELETE            "DeleteTags"
