@@ -6245,15 +6245,22 @@ next:
       return ret;
     }
 
-    RGWBucketReshard br(store, bucket_info, attrs, nullptr /* no callback */);
+    RGWReshardOp* br = nullptr;
+    if (bucket_info.bucket_index_shard_hash_type == RGWBucketInfo::CLASSIC) {
+      br = new RGWBucketReshard(store, bucket_info, attrs, nullprt /* no callback */);
+    } else {
+      br = new RGWBucketReshard(store, bucket_info, attrs, nullprt /* no callback */);
+    }
 
 #define DEFAULT_RESHARD_MAX_ENTRIES 1000
     if (max_entries < 1) {
       max_entries = DEFAULT_RESHARD_MAX_ENTRIES;
     }
 
-    return br.execute(num_shards, max_entries,
+    ret = br->execute(num_shards, max_entries,
                       verbose, &cout, formatter);
+    delete br;
+    return ret;
   }
 
   if (opt_cmd == OPT_RESHARD_ADD) {
@@ -6346,16 +6353,23 @@ next:
       return -ret;
     }
 
-    RGWBucketReshard br(store, bucket_info, attrs, nullptr /* no callback */);
+    RGWReshardOp* br = nullptr;
+    if (bucket_info.bucket_index_shard_hash_type == RGWBucketInfo::CLASSIC) {
+      br = new RGWBucketReshard(store, bucket_info, attrs, nullprt /* no callback */);
+    } else {
+      br = new RGWBucketReshard(store, bucket_info, attrs, nullprt /* no callback */);
+    }
     list<cls_rgw_bucket_instance_entry> status;
-    int r = br.get_status(&status);
+    int r = br->get_status(&status);
     if (r < 0) {
       cerr << "ERROR: could not get resharding status for bucket " <<
 	bucket_name << std::endl;
+      delete br;
       return -r;
     }
 
     show_reshard_status(status, formatter);
+    delete br;
   }
 
   if (opt_cmd == OPT_RESHARD_PROCESS) {
@@ -6383,8 +6397,13 @@ next:
       return -ret;
     }
 
-    RGWBucketReshard br(store, bucket_info, attrs, nullptr /* no callback */);
-    int ret = br.cancel();
+    RGWReshardOp* br = nullptr;
+    if (bucket_info.bucket_index_shard_hash_type == RGWBucketInfo::CLASSIC) {
+      br = new RGWBucketReshard(store, bucket_info, attrs, nullprt /* no callback */);
+    } else {
+      br = new RGWBucketReshard(store, bucket_info, attrs, nullprt /* no callback */);
+    }
+    int ret = br->cancel();
     if (ret < 0) {
       if (ret == -EBUSY) {
 	cerr << "There is ongoing resharding, please retry after " << g_conf->rgw_reshard_bucket_lock_duration <<
@@ -6393,8 +6412,10 @@ next:
 	cerr << "Error canceling bucket " << bucket_name << " resharding: " << cpp_strerror(-ret) <<
 	  std::endl;
       }
+      delete br;
       return ret;
     }
+    delete br;
     RGWReshard reshard(store);
 
     cls_rgw_reshard_entry entry;

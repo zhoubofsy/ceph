@@ -53,7 +53,18 @@ public:
   }
 }; // class RGWBucketReshardLock
 
-class RGWBucketReshard {
+class RGWReshardOp {
+public:
+  virtual int execute(int num_shards, int max_op_entries,
+              bool verbose = false, ostream *out = nullptr,
+              Formatter *formatter = nullptr,
+              RGWReshard *reshard_log = nullptr) = 0;
+  virtual int cancel() = 0;
+  virtual int get_status(std::list<cls_rgw_bucket_instance_entry> *status) = 0;
+  virtual ~RGWReshardOp() = default;
+}; // class RGWReshardOp
+
+class RGWBucketReshard : public RGWReshardOp {
 public:
 
   friend class RGWReshard;

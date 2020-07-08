@@ -1445,6 +1445,9 @@ struct RGWBucketInfo {
   enum BIShardsHashType {
     MOD = 0
   };
+  enum BIShardType {
+    CLASSIC = 0
+  };
 
   rgw_bucket bucket;
   rgw_user owner;
@@ -1466,6 +1469,9 @@ struct RGWBucketInfo {
   // Represents the bucket index shard hash type.
   uint8_t bucket_index_shard_hash_type;
 
+  // Shard Type
+  uint8_t bucket_index_shard_type;
+
   // Represents the shard number for blind bucket.
   const static uint32_t NUM_SHARDS_BLIND_BUCKET;
 
@@ -1486,7 +1492,7 @@ struct RGWBucketInfo {
   string new_bucket_instance_id;
 
   void encode(bufferlist& bl) const {
-     ENCODE_START(19, 4, bl);
+     ENCODE_START(20, 4, bl);
      encode(bucket, bl);
      encode(owner.id, bl);
      encode(flags, bl);
@@ -1513,10 +1519,11 @@ struct RGWBucketInfo {
      encode(mdsearch_config, bl);
      encode(reshard_status, bl);
      encode(new_bucket_instance_id, bl);
+     encode(bucket_index_shard_type, bl);
      ENCODE_FINISH(bl);
   }
   void decode(bufferlist::iterator& bl) {
-    DECODE_START_LEGACY_COMPAT_LEN_32(19, 4, 4, bl);
+    DECODE_START_LEGACY_COMPAT_LEN_32(20, 4, 4, bl);
      decode(bucket, bl);
      if (struct_v >= 2) {
        string s;
@@ -1580,6 +1587,9 @@ struct RGWBucketInfo {
        decode(reshard_status, bl);
        decode(new_bucket_instance_id, bl);
      }
+     if (struct_v >= 20) {
+       decode(bucket_index_shard_type, bl);
+     }
      DECODE_FINISH(bl);
   }
   void dump(Formatter *f) const;
@@ -1599,7 +1609,7 @@ struct RGWBucketInfo {
   }
 
   RGWBucketInfo() : flags(0), has_instance_obj(false), num_shards(0), bucket_index_shard_hash_type(MOD), requester_pays(false),
-                    has_website(false), swift_versioning(false), reshard_status(0) {}
+                    has_website(false), swift_versioning(false), reshard_status(0), bucket_index_shard_type(CLASSIC) {}
 };
 WRITE_CLASS_ENCODER(RGWBucketInfo)
 

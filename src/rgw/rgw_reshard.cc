@@ -1040,18 +1040,25 @@ int RGWReshard::process_single_logshard(int logshard_num)
 	  return -ret;
 	}
 
-	RGWBucketReshard br(store, bucket_info, attrs, nullptr);
+        RGWReshardOp* br = nullptr;
+        if (bucket_info.bucket_index_shard_hash_type == RGWBucketInfo::CLASSIC) {
+          br = new RGWBucketReshard(store, bucket_info, attrs, nullprt /* no callback */);
+        } else {
+          br = new RGWBucketReshard(store, bucket_info, attrs, nullprt /* no callback */);
+        }
 
 	Formatter* formatter = new JSONFormatter(false);
 	auto formatter_ptr = std::unique_ptr<Formatter>(formatter);
-	ret = br.execute(entry.new_num_shards, max_entries, true, nullptr,
+	ret = br->execute(entry.new_num_shards, max_entries, true, nullptr,
 			 formatter, this);
 	if (ret < 0) {
 	  ldout (store->ctx(), 0) <<  __func__ <<
 	    "ERROR in reshard_bucket " << entry.bucket_name << ":" <<
 	    cpp_strerror(-ret)<< dendl;
+          delete br;
 	  return ret;
 	}
+        delete br;
 
 	ldout (store->ctx(), 20) <<  " removing entry" << entry.bucket_name <<
 	  dendl;
