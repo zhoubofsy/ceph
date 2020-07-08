@@ -1041,10 +1041,10 @@ int RGWReshard::process_single_logshard(int logshard_num)
 	}
 
         RGWReshardOp* br = nullptr;
-        if (bucket_info.bucket_index_shard_hash_type == RGWBucketInfo::CLASSIC) {
-          br = new RGWBucketReshard(store, bucket_info, attrs, nullprt /* no callback */);
+        if (bucket_info.bucket_index_shard_type == RGWBucketInfo::CLASSIC) {
+          br = new RGWBucketReshard(store, bucket_info, attrs, nullptr /* no callback */);
         } else {
-          br = new RGWBucketReshard(store, bucket_info, attrs, nullprt /* no callback */);
+          br = new RGWBucketReshard(store, bucket_info, attrs, nullptr /* no callback */);
         }
 
 	Formatter* formatter = new JSONFormatter(false);
