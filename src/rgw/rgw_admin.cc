@@ -6247,9 +6247,9 @@ next:
 
     RGWReshardOp* br = nullptr;
     if (bucket_info.bucket_index_shard_type == RGWBucketInfo::CLASSIC) {
-      br = new RGWBucketReshard(store, bucket_info, attrs, nullprt /* no callback */);
+      br = new RGWBucketReshard(store, bucket_info, attrs, nullptr /* no callback */);
     } else {
-      br = new RGWBucketReshard(store, bucket_info, attrs, nullprt /* no callback */);
+      br = new RGWBucketReshard(store, bucket_info, attrs, nullptr /* no callback */);
     }
 
 #define DEFAULT_RESHARD_MAX_ENTRIES 1000
@@ -6355,9 +6355,9 @@ next:
 
     RGWReshardOp* br = nullptr;
     if (bucket_info.bucket_index_shard_type == RGWBucketInfo::CLASSIC) {
-      br = new RGWBucketReshard(store, bucket_info, attrs, nullprt /* no callback */);
+      br = new RGWBucketReshard(store, bucket_info, attrs, nullptr /* no callback */);
     } else {
-      br = new RGWBucketReshard(store, bucket_info, attrs, nullprt /* no callback */);
+      br = new RGWBucketReshard(store, bucket_info, attrs, nullptr /* no callback */);
     }
     list<cls_rgw_bucket_instance_entry> status;
     int r = br->get_status(&status);
@@ -6399,9 +6399,9 @@ next:
 
     RGWReshardOp* br = nullptr;
     if (bucket_info.bucket_index_shard_type == RGWBucketInfo::CLASSIC) {
-      br = new RGWBucketReshard(store, bucket_info, attrs, nullprt /* no callback */);
+      br = new RGWBucketReshard(store, bucket_info, attrs, nullptr /* no callback */);
     } else {
-      br = new RGWBucketReshard(store, bucket_info, attrs, nullprt /* no callback */);
+      br = new RGWBucketReshard(store, bucket_info, attrs, nullptr /* no callback */);
     }
     int ret = br->cancel();
     if (ret < 0) {

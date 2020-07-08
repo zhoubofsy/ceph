@@ -1608,8 +1608,8 @@ struct RGWBucketInfo {
     return swift_versioning && !versioned();
   }
 
-  RGWBucketInfo() : flags(0), has_instance_obj(false), num_shards(0), bucket_index_shard_hash_type(MOD), requester_pays(false),
-                    has_website(false), swift_versioning(false), reshard_status(0), bucket_index_shard_type(CLASSIC) {}
+  RGWBucketInfo() : flags(0), has_instance_obj(false), num_shards(0), bucket_index_shard_hash_type(MOD), bucket_index_shard_type(CLASSIC), requester_pays(false),
+                    has_website(false), swift_versioning(false), reshard_status(0) {}
 };
 WRITE_CLASS_ENCODER(RGWBucketInfo)
 
