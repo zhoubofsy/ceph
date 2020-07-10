@@ -88,6 +88,7 @@ void usage()
   cout << "  bucket rm                  remove bucket\n";
   cout << "  bucket check               check bucket index\n";
   cout << "  bucket reshard             reshard bucket\n";
+  cout << "  bucket changeshard         change shard type of bucket\n"
   cout << "  bucket rewrite             rewrite all objects in the specified bucket\n";
   cout << "  bucket sync disable        disable bucket sync\n";
   cout << "  bucket sync enable         enable bucket sync\n";
@@ -521,7 +522,8 @@ enum {
   OPT_MFA_CHECK,
   OPT_MFA_RESYNC,
   OPT_RESHARD_STALE_INSTANCES_LIST,
-  OPT_RESHARD_STALE_INSTANCES_DELETE
+  OPT_RESHARD_STALE_INSTANCES_DELETE,
+  OPT_BUCKET_SHARD_TYPE_CHANGE
 };
 
 static int get_cmd(const char *cmd, const char *prev_cmd, const char *prev_prev_cmd, bool *need_more)
@@ -640,6 +642,8 @@ static int get_cmd(const char *cmd, const char *prev_cmd, const char *prev_prev_
       return OPT_BUCKET_REWRITE;
     if (strcmp(cmd, "reshard") == 0)
       return OPT_BUCKET_RESHARD;
+    if (strcmp(cmd, "changeshard") == 0)
+      return OPT_BUCKET_SHARD_TYPE_CHANGE;
     if (strcmp(cmd, "check") == 0)
       return OPT_BUCKET_CHECK;
     if (strcmp(cmd, "sync") == 0) {
@@ -2807,6 +2811,7 @@ int main(int argc, const char **argv)
 
   string job_id;
   int num_shards = 0;
+  int shard_type = 0;
   bool num_shards_specified = false;
   int max_concurrent_ios = 32;
   uint64_t orphan_stale_secs = (24 * 3600);
@@ -2978,6 +2983,12 @@ int main(int argc, const char **argv)
         return EINVAL;
       }
       num_shards_specified = true;
+    } else if (ceph_argparse_witharg(args, i, &val, "--shard-type", (char*)NULL)) {
+      shard_type = (int)strict_strtol(vol.c_str(), 10, &err);
+      if (!err.empty()) {
+        cerr << "ERROR: failed to parse shard type: " << err << std::endl;
+        return EINVAL;
+      }
     } else if (ceph_argparse_witharg(args, i, &val, "--max-concurrent-ios", (char*)NULL)) {
       max_concurrent_ios = (int)strict_strtol(val.c_str(), 10, &err);
       if (!err.empty()) {
@@ -6261,6 +6272,11 @@ next:
                       verbose, &cout, formatter);
     delete br;
     return ret;
+  }
+
+  if (opt_cmd == OPT_BUCKET_SHARD_TYPE_CHANGE) {
+    cout << "change shard type of bucket." << std::endl;
+    return 0;
   }
 
   if (opt_cmd == OPT_RESHARD_ADD) {
