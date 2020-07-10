@@ -88,7 +88,7 @@ void usage()
   cout << "  bucket rm                  remove bucket\n";
   cout << "  bucket check               check bucket index\n";
   cout << "  bucket reshard             reshard bucket\n";
-  cout << "  bucket changeshard         change shard type of bucket\n"
+  cout << "  bucket changeshard         change shard type of bucket\n";
   cout << "  bucket rewrite             rewrite all objects in the specified bucket\n";
   cout << "  bucket sync disable        disable bucket sync\n";
   cout << "  bucket sync enable         enable bucket sync\n";
@@ -2984,7 +2984,7 @@ int main(int argc, const char **argv)
       }
       num_shards_specified = true;
     } else if (ceph_argparse_witharg(args, i, &val, "--shard-type", (char*)NULL)) {
-      shard_type = (int)strict_strtol(vol.c_str(), 10, &err);
+      shard_type = (int)strict_strtol(val.c_str(), 10, &err);
       if (!err.empty()) {
         cerr << "ERROR: failed to parse shard type: " << err << std::endl;
         return EINVAL;
