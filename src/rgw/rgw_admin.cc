@@ -6275,7 +6275,7 @@ next:
   }
 
   if (opt_cmd == OPT_BUCKET_SHARD_TYPE_CHANGE) {
-    cout << "change shard type of bucket." << std::endl;
+    cout << "change shard type of bucket. " << shard_type << std::endl;
     return 0;
   }
 
